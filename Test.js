@@ -110,6 +110,10 @@
         return this._scene;
     };
 
+    SceneManager.IsScene = function(SceneClass) {
+        return this._scene && this._scene.constructor === SceneClass;
+    };
+
     let InfoWindowLayer;
     let ExpGauge;
     let GoldText;
@@ -131,7 +135,7 @@
         let Scene = SceneManager.GetScene();
         Scene.addWindow(InfoWindowLayer);
 
-        let Leader = $gameParty.leader()
+        let Leader = $gameParty.leader();
 
         ExpGauge = new Sprite_GaugePlus();
         ExpGauge.setup(Leader, "exp");
@@ -179,7 +183,7 @@
     });
 
     let AutoGainGoldFrame = 10;
-    let AutoGainGold = 10;
+    let AutoGainGold = 1;
     let AutoGainGoldLooper = new Game_Looper(AutoGainGoldFrame,function(){
         let Leader = $gameParty.leader();
         $gameParty.gainGold(Leader.level * AutoGainGold);
@@ -207,6 +211,10 @@
             for (let i = 0; i < NumItems; i++){
                 action.applyGlobal();
             }
+            if (SceneManager.IsScene(Scene_Shop))
+            {
+                SceneManager.GetScene().popScene();
+            }
         }    
     }
 
@@ -228,6 +236,33 @@
         }
         return Price;
     }
+
+    Scene_Shop.prototype.GetBuyWindow = function() {
+        return this._buyWindow;
+    };
+
+    function OnLeaderLevelChange(OldLevel, NewLevel){
+    }
+
+    let Game_Actor_LevelUp = Game_Actor.prototype.levelUp;
+    Game_Actor.prototype.levelUp = function() {
+        let OldLevel = this.level;
+        Game_Actor_LevelUp.call(this);
+        let NewLevel = this.level;
+        if (this === $gameParty.leader()){
+            OnLeaderLevelChange(OldLevel, NewLevel);
+        }
+    };
+    
+    let Game_Actor_LevelDown = Game_Actor.prototype.levelDown;
+    Game_Actor.prototype.levelDown = function() {
+        let OldLevel = this.level;
+        Game_Actor_LevelDown.call(this);
+        let NewLevel = this.level;
+        if (this === $gameParty.leader()){
+            OnLeaderLevelChange(OldLevel, NewLevel);
+        }
+    };
 
     PluginManager.registerCommand(pluginName, "Test", args => {
     });
